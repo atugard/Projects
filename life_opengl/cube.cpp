@@ -13,6 +13,7 @@ GLint attribute_coord3d, attribute_v_color;
 GLint uniform_fade;
 int screen_width=800, screen_height=600;
 
+//bla
 struct attributes {
   GLfloat coord3d[3];
   GLfloat v_color[3];
