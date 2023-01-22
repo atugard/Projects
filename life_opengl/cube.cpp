@@ -6,12 +6,13 @@
 
 //global vars
 GLuint ibo_cube_elements; //ibo = index buffer object
-GLint uniform_m_transform;
 GLuint program;
 GLuint vbo_cube_vertices, vbo_cube_colors;
 GLint attribute_coord3d, attribute_v_color;
-GLint uniform_fade;
 int screen_width=800, screen_height=600;
+GLint uniform_m_transform;
+GLint uniform_fade;
+GLint uniform_mvp;
 
 //bla
 struct attributes {
@@ -106,6 +107,14 @@ bool init_resources(){
     cerr << "Could not bind attribute " << attribute_name << endl;
     return false;
   }
+
+  const char* uniform_name;
+  uniform_name = "mvp";
+  uniform_mvp = glGetUniformLocation(program, uniform_name);
+  if (uniform_mvp == -1) {
+    fprintf(stderr, "Could not bind uniform %s\n", uniform_name);
+    return 0;
+  }
   
   return true;
 }
@@ -194,6 +203,8 @@ void logic() {
   glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -4.0));
   glm::mat4 view = glm::lookAt(glm::vec3(0.0, 2.0, 0.0), glm::vec3(0.0, 0.0, -4.0), glm::vec3(0.0, 1.0, 0.0));
   glm::mat4 projection = glm::perspective(recalculatefov(), 1.0f * screen_width / screen_height, 0.1f, 10.0f);
+  glm::mat4 mvp = projection * view * model;
+  glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));  
 }
 
 void mainLoop(SDL_Window* window){
@@ -211,9 +222,9 @@ void mainLoop(SDL_Window* window){
 int main(int argc, char* argv[]){
   //SDL-related initialising functions
   SDL_Init(SDL_INIT_VIDEO);
-  SDL_Window* window = SDL_CreateWindow("My Second Triangle",
+  SDL_Window* window = SDL_CreateWindow("My Textured Cube",
 					SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-					640, 480,
+					screen_width, screen_height,
 					SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
   if (window == NULL) {
     cerr << "Error: can't create window: " << SDL_GetError() << endl;
