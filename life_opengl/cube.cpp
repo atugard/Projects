@@ -94,7 +94,7 @@ bool init_resources(){
     return false;
   }
   
-  //bind attributes
+  //bind attributes/uniforms
   const char* attribute_name = "coord3d";
   attribute_coord3d = glGetAttribLocation(program, attribute_name);
   if (attribute_coord3d == -1) {
@@ -107,13 +107,18 @@ bool init_resources(){
     cerr << "Could not bind attribute " << attribute_name << endl;
     return false;
   }
-
   const char* uniform_name;
   uniform_name = "mvp";
   uniform_mvp = glGetUniformLocation(program, uniform_name);
   if (uniform_mvp == -1) {
     fprintf(stderr, "Could not bind uniform %s\n", uniform_name);
     return 0;
+  }
+  uniform_name = "m_transform";
+  uniform_m_transform = glGetUniformLocation(program, uniform_name);
+  if (uniform_m_transform == -1) {
+    cerr << "Could not bind uniform " << uniform_name << endl;
+    return false;
   }
   
   return true;
@@ -168,6 +173,7 @@ void free_resources(){
   glDeleteBuffers(1, &vbo_cube_colors);
   glDeleteBuffers(1, &ibo_cube_elements);
 }
+//aspect is width/height
  float aspectaxis()
   {
     float outputzoom = 1.0f;
@@ -199,21 +205,35 @@ float recalculatefov()
 }
 void logic() {
   glUseProgram(program);
-  
+  float angle = SDL_GetTicks() / 1000.0 * 45;  // 45° per second
+  glm::vec3 axis_y(0, 1, 0);
+  glm::mat4 m_transform = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis_y);
+  glUniformMatrix4fv(uniform_m_transform, 1, GL_FALSE, glm::value_ptr(m_transform));
+
   glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -4.0));
+  //eye is at (0,2,0) looking at (0,0,-4), and up is given by (0,1,0).
   glm::mat4 view = glm::lookAt(glm::vec3(0.0, 2.0, 0.0), glm::vec3(0.0, 0.0, -4.0), glm::vec3(0.0, 1.0, 0.0));
   glm::mat4 projection = glm::perspective(recalculatefov(), 1.0f * screen_width / screen_height, 0.1f, 10.0f);
   glm::mat4 mvp = projection * view * model;
   glUniformMatrix4fv(uniform_mvp, 1, GL_FALSE, glm::value_ptr(mvp));  
 }
 
+void onResize(int width, int height) {
+  screen_width = width;
+  screen_height = height;
+  glViewport(0, 0, screen_width, screen_height);
+}
+
 void mainLoop(SDL_Window* window){
   while(true){
     SDL_Event ev;
     while(SDL_PollEvent(&ev)){
+      if (ev.type == SDL_WINDOWEVENT && ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+	onResize(ev.window.data1, ev.window.data2);      
       if(ev.type == SDL_QUIT)
 	return;
     }
+
     logic();
     render(window);
   }

@@ -11,6 +11,7 @@ char* file_read(const char* filename) {
   Sint64 nb_read_total = 0, nb_read = 1;
   char* buf = res;
   while (nb_read_total < res_size && nb_read != 0) {
+    //read from rw and write it to buf.
     nb_read = SDL_RWread(rw, buf, 1, (res_size - nb_read_total));
     nb_read_total += nb_read;
     buf += nb_read;
